@@ -304,9 +304,10 @@
             padding: 25px;
             border-radius: 8px;
             width: 90%;
-            max-width: 600px;
+            max-width: 700px;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         
         .modal-header {
@@ -329,15 +330,30 @@
             font-size: 1.5rem;
             cursor: pointer;
             color: var(--primary-color);
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-modal:hover {
+            background-color: #f0f0f0;
+            border-radius: 50%;
         }
         
         .config-section {
             margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--light-color);
         }
         
         .config-section h3 {
             margin-bottom: 15px;
             color: var(--secondary-color);
+            font-size: 1.1rem;
         }
         
         .config-group {
@@ -355,6 +371,7 @@
             padding: 8px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
+            font-size: 0.9rem;
         }
         
         .config-checkbox {
@@ -369,6 +386,7 @@
         
         .checkbox-label {
             font-weight: normal;
+            cursor: pointer;
         }
         
         .config-buttons {
@@ -376,6 +394,37 @@
             justify-content: flex-end;
             gap: 10px;
             margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .config-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .config-tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .config-tab.active {
+            border-bottom: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
         }
         
         @media print {
@@ -410,6 +459,14 @@
             .card-content {
                 grid-template-columns: 1fr;
             }
+            
+            .config-tabs {
+                flex-direction: column;
+            }
+            
+            .config-tab {
+                text-align: left;
+            }
         }
     </style>
 </head>
@@ -417,7 +474,7 @@
     <div class="container">
         <header>
             <h1>Générateur de Fiches Clients</h1>
-            <div class="hotel-name">Hôtel Vendome Opéra ****</div>
+            <div class="hotel-name" id="display-hotel-name">Hôtel Vendome Opéra ****</div>
             <p class="description">Créez des fiches de renseignements préremplies à partir de votre fichier Excel Booking</p>
             <button class="config-btn" id="config-btn">Configuration</button>
         </header>
@@ -499,71 +556,102 @@
                 <button class="close-modal" id="close-modal">&times;</button>
             </div>
             
-            <div class="config-section">
-                <h3>Dimensions des cartes</h3>
-                <div class="config-group">
-                    <label class="config-label" for="card-width">Largeur des cartes (mm) :</label>
-                    <input type="number" id="card-width" class="config-input" value="105" min="80" max="120">
-                </div>
-                <div class="config-group">
-                    <label class="config-label" for="card-height">Hauteur des cartes (mm) :</label>
-                    <input type="number" id="card-height" class="config-input" value="148" min="100" max="180">
-                </div>
-                <div class="config-group">
-                    <label class="config-label" for="card-padding">Marge intérieure (px) :</label>
-                    <input type="number" id="card-padding" class="config-input" value="15" min="5" max="30">
-                </div>
-                <div class="config-group">
-                    <label class="config-label" for="font-size">Taille de police :</label>
-                    <select id="font-size" class="config-input">
-                        <option value="small">Petite</option>
-                        <option value="medium" selected>Moyenne</option>
-                        <option value="large">Grande</option>
-                    </select>
+            <div class="config-tabs">
+                <button class="config-tab active" data-tab="hotel">Informations Hôtel</button>
+                <button class="config-tab" data-tab="dimensions">Dimensions</button>
+                <button class="config-tab" data-tab="champs">Champs</button>
+            </div>
+            
+            <!-- Onglet Informations Hôtel -->
+            <div id="tab-hotel" class="tab-content active">
+                <div class="config-section">
+                    <h3>Informations de l'hôtel</h3>
+                    <div class="config-group">
+                        <label class="config-label" for="hotel-name">Nom de l'hôtel :</label>
+                        <input type="text" id="hotel-name" class="config-input" value="Hôtel Vendome Opéra ****">
+                    </div>
+                    <div class="config-group">
+                        <label class="config-label" for="hotel-address">Adresse :</label>
+                        <input type="text" id="hotel-address" class="config-input" value="11bis rue de l'arcade, 75008 Paris">
+                    </div>
+                    <div class="config-group">
+                        <label class="config-label" for="hotel-subtitle">Sous-titre (optionnel) :</label>
+                        <input type="text" id="hotel-subtitle" class="config-input" value="Hôtel Vendome Opéra">
+                    </div>
                 </div>
             </div>
             
-            <div class="config-section">
-                <h3>Champs à afficher</h3>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-nom" class="config-checkbox" checked>
-                    <label class="checkbox-label" for="field-nom">Nom</label>
+            <!-- Onglet Dimensions -->
+            <div id="tab-dimensions" class="tab-content">
+                <div class="config-section">
+                    <h3>Dimensions des cartes</h3>
+                    <div class="config-group">
+                        <label class="config-label" for="card-width">Largeur des cartes (mm) :</label>
+                        <input type="number" id="card-width" class="config-input" value="105" min="80" max="120">
+                    </div>
+                    <div class="config-group">
+                        <label class="config-label" for="card-height">Hauteur des cartes (mm) :</label>
+                        <input type="number" id="card-height" class="config-input" value="148" min="100" max="180">
+                    </div>
+                    <div class="config-group">
+                        <label class="config-label" for="card-padding">Marge intérieure (px) :</label>
+                        <input type="number" id="card-padding" class="config-input" value="15" min="5" max="30">
+                    </div>
+                    <div class="config-group">
+                        <label class="config-label" for="font-size">Taille de police :</label>
+                        <select id="font-size" class="config-input">
+                            <option value="small">Petite</option>
+                            <option value="medium" selected>Moyenne</option>
+                            <option value="large">Grande</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-prenom" class="config-checkbox" checked>
-                    <label class="checkbox-label" for="field-prenom">Prénom</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-nationalite" class="config-checkbox" checked>
-                    <label class="checkbox-label" for="field-nationalite">Nationalité</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-arrivee" class="config-checkbox" checked>
-                    <label class="checkbox-label" for="field-arrivee">Date d'arrivée</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-depart" class="config-checkbox" checked>
-                    <label class="checkbox-label" for="field-depart">Date de départ</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-chambre" class="config-checkbox" checked>
-                    <label class="checkbox-label" for="field-chambre">Type de chambre</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-canal" class="config-checkbox" checked>
-                    <label class="checkbox-label" for="field-canal">Canal de réservation</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-reference" class="config-checkbox" checked>
-                    <label class="checkbox-label" for="field-reference">Référence de réservation</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-telephone" class="config-checkbox" checked>
-                    <label class="checkbox-label" for="field-telephone">Téléphone</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="field-email" class="config-checkbox">
-                    <label class="checkbox-label" for="field-email">E-mail</label>
+            </div>
+            
+            <!-- Onglet Champs -->
+            <div id="tab-champs" class="tab-content">
+                <div class="config-section">
+                    <h3>Champs à afficher</h3>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-nom" class="config-checkbox" checked>
+                        <label class="checkbox-label" for="field-nom">Nom</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-prenom" class="config-checkbox" checked>
+                        <label class="checkbox-label" for="field-prenom">Prénom</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-nationalite" class="config-checkbox" checked>
+                        <label class="checkbox-label" for="field-nationalite">Nationalité</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-arrivee" class="config-checkbox" checked>
+                        <label class="checkbox-label" for="field-arrivee">Date d'arrivée</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-depart" class="config-checkbox" checked>
+                        <label class="checkbox-label" for="field-depart">Date de départ</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-chambre" class="config-checkbox" checked>
+                        <label class="checkbox-label" for="field-chambre">Type de chambre</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-canal" class="config-checkbox" checked>
+                        <label class="checkbox-label" for="field-canal">Canal de réservation</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-reference" class="config-checkbox" checked>
+                        <label class="checkbox-label" for="field-reference">Référence de réservation</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-telephone" class="config-checkbox" checked>
+                        <label class="checkbox-label" for="field-telephone">Téléphone</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="field-email" class="config-checkbox">
+                        <label class="checkbox-label" for="field-email">E-mail</label>
+                    </div>
                 </div>
             </div>
             
@@ -583,6 +671,11 @@
         // Variables globales
         let clientData = [];
         let config = {
+            hotel: {
+                name: "Hôtel Vendome Opéra ****",
+                address: "11bis rue de l'arcade, 75008 Paris",
+                subtitle: "Hôtel Vendome Opéra"
+            },
             cardWidth: 105,
             cardHeight: 148,
             cardPadding: 15,
@@ -618,12 +711,18 @@
         const closeModal = document.getElementById('close-modal');
         const cancelConfig = document.getElementById('cancel-config');
         const saveConfig = document.getElementById('save-config');
+        const displayHotelName = document.getElementById('display-hotel-name');
         
         // Éléments de configuration
+        const hotelNameInput = document.getElementById('hotel-name');
+        const hotelAddressInput = document.getElementById('hotel-address');
+        const hotelSubtitleInput = document.getElementById('hotel-subtitle');
         const cardWidthInput = document.getElementById('card-width');
         const cardHeightInput = document.getElementById('card-height');
         const cardPaddingInput = document.getElementById('card-padding');
         const fontSizeSelect = document.getElementById('font-size');
+        const configTabs = document.querySelectorAll('.config-tab');
+        const tabContents = document.querySelectorAll('.tab-content');
         
         // Événements
         excelFileInput.addEventListener('change', handleFileSelect);
@@ -635,6 +734,21 @@
         closeModal.addEventListener('click', closeConfig);
         cancelConfig.addEventListener('click', closeConfig);
         saveConfig.addEventListener('click', saveConfiguration);
+        
+        // Gestion des onglets de configuration
+        configTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                // Désactiver tous les onglets
+                configTabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                // Activer l'onglet sélectionné
+                tab.classList.add('active');
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+            });
+        });
         
         // Charger la configuration sauvegardée
         loadConfiguration();
@@ -910,13 +1024,13 @@
                 card.innerHTML = `
                     <div class="card-header">
                         <div class="card-title">FICHE CLIENT</div>
-                        <div class="card-subtitle">Hôtel Vendome Opéra</div>
+                        <div class="card-subtitle">${config.hotel.subtitle}</div>
                     </div>
                     <div class="card-content">
                         ${cardContent}
                     </div>
                     <div class="card-footer">
-                        <div class="hotel-address">11bis rue de l'arcade, 75008 Paris</div>
+                        <div class="hotel-address">${config.hotel.address}</div>
                     </div>
                 `;
                 
@@ -943,6 +1057,9 @@
             
             // Ajuster la grille d'aperçu
             cardsPreview.style.gap = '15px';
+            
+            // Mettre à jour le nom de l'hôtel dans l'en-tête
+            displayHotelName.textContent = config.hotel.name;
         }
         
         function generatePDF() {
@@ -1062,6 +1179,9 @@
         
         function openConfig() {
             // Remplir le modal avec la configuration actuelle
+            hotelNameInput.value = config.hotel.name;
+            hotelAddressInput.value = config.hotel.address;
+            hotelSubtitleInput.value = config.hotel.subtitle;
             cardWidthInput.value = config.cardWidth;
             cardHeightInput.value = config.cardHeight;
             cardPaddingInput.value = config.cardPadding;
@@ -1085,6 +1205,10 @@
         
         function saveConfiguration() {
             // Sauvegarder la nouvelle configuration
+            config.hotel.name = hotelNameInput.value || "Hôtel Vendome Opéra ****";
+            config.hotel.address = hotelAddressInput.value || "11bis rue de l'arcade, 75008 Paris";
+            config.hotel.subtitle = hotelSubtitleInput.value || "Hôtel Vendome Opéra";
+            
             config.cardWidth = parseInt(cardWidthInput.value) || 105;
             config.cardHeight = parseInt(cardHeightInput.value) || 148;
             config.cardPadding = parseInt(cardPaddingInput.value) || 15;
@@ -1106,6 +1230,9 @@
                 generateCards();
             }
             
+            // Mettre à jour l'affichage du nom de l'hôtel
+            displayHotelName.textContent = config.hotel.name;
+            
             // Fermer le modal
             closeConfig();
         }
@@ -1114,6 +1241,8 @@
             const savedConfig = localStorage.getItem('ficheClientConfig');
             if (savedConfig) {
                 config = JSON.parse(savedConfig);
+                // Mettre à jour l'affichage du nom de l'hôtel
+                displayHotelName.textContent = config.hotel.name;
             }
         }
         
