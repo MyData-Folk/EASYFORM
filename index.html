@@ -192,7 +192,7 @@
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            height: 210px; /* Hauteur par défaut A6 */
+            height: 210px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -468,27 +468,6 @@
                 text-align: left;
             }
         }
-
-        /* Styles pour l'état de chargement */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            font-size: 1.2rem;
-            color: var(--secondary-color);
-        }
     </style>
 </head>
 <body>
@@ -683,880 +662,557 @@
         </div>
     </div>
 
-    <!-- Overlay de chargement -->
-    <div id="loading-overlay" class="loading-overlay hidden">
-        <div>Chargement en cours...</div>
-    </div>
-
     <!-- Bibliothèques externes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
-        // Variables globales
-        let clientData = [];
-        let config = {
-            hotel: {
-                name: "Hôtel Vendome Opéra ****",
-                address: "11bis rue de l'arcade, 75008 Paris",
-                subtitle: "Hôtel Vendome Opéra"
-            },
-            cardWidth: 105,
-            cardHeight: 148,
-            cardPadding: 15,
-            fontSize: 'medium',
-            fields: {
-                nom: true,
-                prenom: true,
-                nationalite: true,
-                arrivee: true,
-                depart: true,
-                chambre: true,
-                canal: true,
-                reference: true,
-                telephone: true,
-                email: false
-            }
-        };
-        
-        // Références aux éléments DOM
-        const excelFileInput = document.getElementById('excel-file');
-        const processBtn = document.getElementById('process-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        const previewSection = document.getElementById('preview-section');
-        const previewBody = document.getElementById('preview-body');
-        const noDataMessage = document.getElementById('no-data-message');
-        const cardsContainer = document.getElementById('cards-container');
-        const cardsPreview = document.getElementById('cards-preview');
-        const generatePdfBtn = document.getElementById('generate-pdf');
-        const printBtn = document.getElementById('print-btn');
-        const printSection = document.getElementById('print-section');
-        const configBtn = document.getElementById('config-btn');
-        const configModal = document.getElementById('config-modal');
-        const closeModal = document.getElementById('close-modal');
-        const cancelConfig = document.getElementById('cancel-config');
-        const saveConfig = document.getElementById('save-config');
-        const displayHotelName = document.getElementById('display-hotel-name');
-        const loadingOverlay = document.getElementById('loading-overlay');
-        
-        // Éléments de configuration
-        const hotelNameInput = document.getElementById('hotel-name');
-        const hotelAddressInput = document.getElementById('hotel-address');
-        const hotelSubtitleInput = document.getElementById('hotel-subtitle');
-        const cardWidthInput = document.getElementById('card-width');
-        const cardHeightInput = document.getElementById('card-height');
-        const cardPaddingInput = document.getElementById('card-padding');
-        const fontSizeSelect = document.getElementById('font-size');
-        const configTabs = document.querySelectorAll('.config-tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-        
-        // Événements
-        excelFileInput.addEventListener('change', handleFileSelect);
-        processBtn.addEventListener('click', processData);
-        resetBtn.addEventListener('click', resetApp);
-        generatePdfBtn.addEventListener('click', generatePDF);
-        printBtn.addEventListener('click', printCards);
-        configBtn.addEventListener('click', openConfig);
-        closeModal.addEventListener('click', closeConfig);
-        cancelConfig.addEventListener('click', closeConfig);
-        saveConfig.addEventListener('click', saveConfiguration);
-        
-        // Gestion des onglets de configuration
-        configTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-tab');
-                
-                // Désactiver tous les onglets
-                configTabs.forEach(t => t.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
-                
-                // Activer l'onglet sélectionné
-                tab.classList.add('active');
-                document.getElementById(`tab-${tabId}`).classList.add('active');
-            });
-        });
-        
-        // Charger la configuration sauvegardée
-        loadConfiguration();
-        
-        // Fonctions
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                processBtn.disabled = false;
-            }
-        }
-        
-        function processData() {
-            const file = excelFileInput.files[0];
-            if (!file) return;
-            
-            showLoading(true);
-            
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    // Prendre la première feuille
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    // Convertir en JSON
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    // Traiter les données (supposer que la première ligne contient les en-têtes)
-                    const headers = jsonData[0];
-                    const dataRows = jsonData.slice(1);
-                    
-                    // Mapper les données aux champs souhaités selon votre fichier Excel
-                    clientData = dataRows.map(row => {
-                        // Trouver les indices des colonnes pertinentes selon votre fichier Excel
-                        const nomIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('nom'));
-                        const prenomIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('prénom'));
-                        const nationaliteIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('pays'));
-                        const dateArriveeIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('date d\'arrivée'));
-                        const dateDepartIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('date de départ'));
-                        const telephoneIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('téléphone'));
-                        const referenceIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('référence'));
-                        const chambreIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('type de chambre'));
-                        const canalIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('partenaire de distribution'));
-                        const emailIndex = headers.findIndex(h => 
-                            h && h.toString().toLowerCase().includes('e-mail'));
-                        
-                        return {
-                            nom: nomIndex >= 0 && row[nomIndex] ? row[nomIndex].toString().toUpperCase() : '',
-                            prenom: prenomIndex >= 0 && row[prenomIndex] ? capitalizeFirstLetter(row[prenomIndex].toString()) : '',
-                            nationalite: nationaliteIndex >= 0 && row[nationaliteIndex] ? row[nationaliteIndex].toString() : '',
-                            dateArrivee: dateArriveeIndex >= 0 && row[dateArriveeIndex] ? formatDate(row[dateArriveeIndex]) : '',
-                            dateDepart: dateDepartIndex >= 0 && row[dateDepartIndex] ? formatDate(row[dateDepartIndex]) : '',
-                            telephone: telephoneIndex >= 0 && row[telephoneIndex] ? formatPhoneNumber(row[telephoneIndex].toString()) : '',
-                            reference: referenceIndex >= 0 && row[referenceIndex] ? row[referenceIndex].toString() : '',
-                            chambre: chambreIndex >= 0 && row[chambreIndex] ? row[chambreIndex].toString() : '',
-                            canal: canalIndex >= 0 && row[canalIndex] ? row[canalIndex].toString() : '',
-                            email: emailIndex >= 0 && row[emailIndex] ? row[emailIndex].toString() : ''
-                        };
-                    }).filter(client => client.nom && client.prenom); // Filtrer les clients sans nom/prénom
-                    
-                    // Afficher l'aperçu des données
-                    displayDataPreview();
-                    
-                    // Générer les fiches
-                    generateCards();
-                    
-                } catch (error) {
-                    console.error('Erreur lors du traitement du fichier:', error);
-                    alert('Erreur lors du traitement du fichier. Vérifiez le format du fichier.');
-                } finally {
-                    showLoading(false);
+        // =============================================
+        // MODULE CONFIGURATION
+        // =============================================
+        const ConfigModule = (function() {
+            let config = {
+                hotel: {
+                    name: "Hôtel Vendome Opéra ****",
+                    address: "11bis rue de l'arcade, 75008 Paris",
+                    subtitle: "Hôtel Vendome Opéra"
+                },
+                cardWidth: 105,
+                cardHeight: 148,
+                cardPadding: 15,
+                fontSize: 'medium',
+                fields: {
+                    nom: true,
+                    prenom: true,
+                    nationalite: true,
+                    arrivee: true,
+                    depart: true,
+                    chambre: true,
+                    canal: true,
+                    reference: true,
+                    telephone: true,
+                    email: false
                 }
             };
-            
-            reader.onerror = function() {
-                alert('Erreur lors de la lecture du fichier.');
-                showLoading(false);
+
+            // Charger la configuration depuis le localStorage
+            function load() {
+                const savedConfig = localStorage.getItem('ficheClientConfig');
+                if (savedConfig) {
+                    config = JSON.parse(savedConfig);
+                }
+                return config;
+            }
+
+            // Sauvegarder la configuration dans le localStorage
+            function save(newConfig) {
+                config = {...config, ...newConfig};
+                localStorage.setItem('ficheClientConfig', JSON.stringify(config));
+                return config;
+            }
+
+            // Obtenir la configuration actuelle
+            function get() {
+                return {...config};
+            }
+
+            return {
+                load,
+                save,
+                get
             };
-            
-            reader.readAsArrayBuffer(file);
-        }
-        
-        function capitalizeFirstLetter(string) {
-            return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
-        }
-        
-        function formatPhoneNumber(phone) {
-            if (!phone) return '';
-            // Nettoyer le numéro de téléphone
-            return phone.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
-        }
-        
-        function formatDate(dateValue) {
-            // Gérer différents formats de date
-            if (!dateValue) return '';
-            
-            if (typeof dateValue === 'string') {
-                // Si c'est une chaîne de caractères, essayer de l'analyser
-                const date = new Date(dateValue);
-                if (!isNaN(date.getTime())) {
+        })();
+
+        // =============================================
+        // MODULE DONNÉES EXCEL
+        // =============================================
+        const ExcelModule = (function() {
+            function processFile(file, onSuccess, onError) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        const headers = jsonData[0];
+                        const dataRows = jsonData.slice(1);
+                        
+                        const clientData = dataRows.map(row => {
+                            const nomIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('nom'));
+                            const prenomIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('prénom'));
+                            const nationaliteIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('pays'));
+                            const dateArriveeIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('date d\'arrivée'));
+                            const dateDepartIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('date de départ'));
+                            const telephoneIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('téléphone'));
+                            const referenceIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('référence'));
+                            const chambreIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('type de chambre'));
+                            const canalIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('partenaire de distribution'));
+                            const emailIndex = headers.findIndex(h => 
+                                h && h.toString().toLowerCase().includes('e-mail'));
+                            
+                            return {
+                                nom: nomIndex >= 0 && row[nomIndex] ? row[nomIndex].toString().toUpperCase() : '',
+                                prenom: prenomIndex >= 0 && row[prenomIndex] ? capitalizeFirstLetter(row[prenomIndex].toString()) : '',
+                                nationalite: nationaliteIndex >= 0 && row[nationaliteIndex] ? row[nationaliteIndex].toString() : '',
+                                dateArrivee: dateArriveeIndex >= 0 && row[dateArriveeIndex] ? formatDate(row[dateArriveeIndex]) : '',
+                                dateDepart: dateDepartIndex >= 0 && row[dateDepartIndex] ? formatDate(row[dateDepartIndex]) : '',
+                                telephone: telephoneIndex >= 0 && row[telephoneIndex] ? formatPhoneNumber(row[telephoneIndex].toString()) : '',
+                                reference: referenceIndex >= 0 && row[referenceIndex] ? row[referenceIndex].toString() : '',
+                                chambre: chambreIndex >= 0 && row[chambreIndex] ? row[chambreIndex].toString() : '',
+                                canal: canalIndex >= 0 && row[canalIndex] ? row[canalIndex].toString() : '',
+                                email: emailIndex >= 0 && row[emailIndex] ? row[emailIndex].toString() : ''
+                            };
+                        }).filter(client => client.nom && client.prenom);
+                        
+                        onSuccess(clientData);
+                    } catch (error) {
+                        onError(error);
+                    }
+                };
+                
+                reader.onerror = function() {
+                    onError(new Error('Erreur lors de la lecture du fichier.'));
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+
+            function capitalizeFirstLetter(string) {
+                return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+            }
+
+            function formatPhoneNumber(phone) {
+                if (!phone) return '';
+                return phone.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
+            }
+
+            function formatDate(dateValue) {
+                if (!dateValue) return '';
+                
+                if (typeof dateValue === 'string') {
+                    const date = new Date(dateValue);
+                    if (!isNaN(date.getTime())) {
+                        return date.toLocaleDateString('fr-FR');
+                    }
+                    return dateValue;
+                }
+                
+                if (dateValue instanceof Date) {
+                    return dateValue.toLocaleDateString('fr-FR');
+                }
+                
+                if (typeof dateValue === 'number') {
+                    const date = new Date((dateValue - 25569) * 86400 * 1000);
                     return date.toLocaleDateString('fr-FR');
                 }
-                return dateValue;
+                
+                return dateValue.toString();
             }
-            
-            if (dateValue instanceof Date) {
-                return dateValue.toLocaleDateString('fr-FR');
-            }
-            
-            // Si c'est un numéro Excel (nombre de jours depuis 1900)
-            if (typeof dateValue === 'number') {
-                const date = new Date((dateValue - 25569) * 86400 * 1000);
-                return date.toLocaleDateString('fr-FR');
-            }
-            
-            return dateValue.toString();
-        }
-        
-        function displayDataPreview() {
-            // Afficher la section d'aperçu
-            previewSection.classList.remove('hidden');
-            
-            // Vider le tableau d'aperçu
-            previewBody.innerHTML = '';
-            
-            // Ajouter les données (limitées aux 10 premières lignes pour l'aperçu)
-            const previewData = clientData.slice(0, 10);
-            
-            previewData.forEach(client => {
-                const row = document.createElement('tr');
-                
-                row.innerHTML = `
-                    <td>${client.nom}</td>
-                    <td>${client.prenom}</td>
-                    <td>${client.nationalite}</td>
-                    <td>${client.dateArrivee}</td>
-                    <td>${client.dateDepart}</td>
-                    <td>${client.telephone}</td>
-                    <td>${client.reference}</td>
-                `;
-                
-                previewBody.appendChild(row);
-            });
-            
-            // Afficher un message si plus de données
-            if (clientData.length > 10) {
-                const infoRow = document.createElement('tr');
-                infoRow.innerHTML = `<td colspan="7" style="text-align: center; font-style: italic;">... et ${clientData.length - 10} autres clients</td>`;
-                previewBody.appendChild(infoRow);
-            }
-        }
-        
-        function generateCards() {
-            // Cacher le message d'absence de données
-            noDataMessage.classList.add('hidden');
-            
-            // Afficher le conteneur de fiches
-            cardsContainer.classList.remove('hidden');
-            
-            // Vider les fiches existantes
-            cardsPreview.innerHTML = '';
-            
-            // Appliquer la configuration aux cartes
-            applyCardConfiguration();
-            
-            // Générer les fiches pour chaque client
-            clientData.forEach((client, index) => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                
-                // Construire le contenu de la carte en fonction des champs activés
-                let cardContent = '';
-                
-                if (config.fields.nom) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Nom :</span>
-                            <span class="field-value">${client.nom}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.prenom) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Prénom :</span>
-                            <span class="field-value">${client.prenom}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.nationalite) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Nationalité :</span>
-                            <span class="field-value">${client.nationalite}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.arrivee) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Arrivée :</span>
-                            <span class="field-value">${client.dateArrivee}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.depart) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Départ :</span>
-                            <span class="field-value">${client.dateDepart}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.chambre) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Chambre :</span>
-                            <span class="field-value">${client.chambre}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.canal) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Canal :</span>
-                            <span class="field-value">${client.canal}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.reference) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Référence :</span>
-                            <span class="field-value">${client.reference}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.telephone) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Téléphone :</span>
-                            <span class="field-value">${client.telephone}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.email) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">E-mail :</span>
-                            <span class="field-value">${client.email}</span>
-                        </div>
-                    `;
-                }
-                
-                card.innerHTML = `
-                    <div class="card-header">
-                        <div class="card-title">FICHE CLIENT</div>
-                        <div class="card-subtitle">${config.hotel.subtitle}</div>
-                    </div>
-                    <div class="card-content">
-                        ${cardContent}
-                    </div>
-                    <div class="card-footer">
-                        <div class="hotel-address">${config.hotel.address}</div>
-                    </div>
-                `;
-                
-                cardsPreview.appendChild(card);
-            });
-        }
-        
-        function applyCardConfiguration() {
-            // Appliquer la taille des cartes
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                card.style.width = `${config.cardWidth}mm`;
-                card.style.height = `${config.cardHeight}mm`;
-                card.style.padding = `${config.cardPadding}px`;
-            });
-            
-            // Appliquer la taille de police
-            let fontSize;
-            switch(config.fontSize) {
-                case 'small':
-                    fontSize = '0.7rem';
-                    break;
-                case 'large':
-                    fontSize = '0.9rem';
-                    break;
-                default:
-                    fontSize = '0.8rem';
-            }
-            
-            document.documentElement.style.setProperty('--card-font-size', fontSize);
-        }
-        
-        function generatePDF() {
-            if (clientData.length === 0) {
-                alert('Aucune donnée à exporter.');
-                return;
-            }
-            
-            showLoading(true);
-            
-            // Utiliser jsPDF pour générer le PDF
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
-            
-            // Dimensions A4
-            const pageWidth = 210;
-            const pageHeight = 297;
-            
-            // Dimensions des cartes
-            const cardWidth = config.cardWidth;
-            const cardHeight = config.cardHeight;
-            
-            // Marges et espacement
-            const marginX = (pageWidth - (cardWidth * 2)) / 3;
-            const marginY = (pageHeight - (cardHeight * 2)) / 3;
-            
-            let currentPage = 0;
-            let positionX = marginX;
-            let positionY = marginY;
-            
-            // Fonction pour ajouter une nouvelle page
-            function addNewPage() {
-                doc.addPage();
-                currentPage++;
-                positionX = marginX;
-                positionY = marginY;
-            }
-            
-            // Générer le PDF avec les cartes
-            const generatePDFWithCards = async () => {
-                try {
-                    for (let i = 0; i < clientData.length; i++) {
-                        const client = clientData[i];
-                        
-                        // Vérifier si on doit passer à une nouvelle page
-                        if (positionY + cardHeight > pageHeight - marginY) {
-                            positionY = marginY;
-                            positionX += cardWidth + marginX;
-                            
-                            if (positionX + cardWidth > pageWidth - marginX) {
-                                addNewPage();
-                            }
-                        }
-                        
-                        // Créer un élément temporaire pour la carte
-                        const tempCard = document.createElement('div');
-                        tempCard.className = 'card';
-                        tempCard.style.width = `${cardWidth}mm`;
-                        tempCard.style.height = `${cardHeight}mm`;
-                        tempCard.style.padding = `${config.cardPadding}px`;
-                        tempCard.style.position = 'absolute';
-                        tempCard.style.left = '-9999px';
-                        tempCard.style.top = '0';
-                        
-                        // Construire le contenu de la carte
-                        let cardContent = '';
-                        
-                        if (config.fields.nom) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">Nom :</span>
-                                    <span class="field-value">${client.nom}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        if (config.fields.prenom) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">Prénom :</span>
-                                    <span class="field-value">${client.prenom}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        if (config.fields.nationalite) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">Nationalité :</span>
-                                    <span class="field-value">${client.nationalite}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        if (config.fields.arrivee) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">Arrivée :</span>
-                                    <span class="field-value">${client.dateArrivee}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        if (config.fields.depart) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">Départ :</span>
-                                    <span class="field-value">${client.dateDepart}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        if (config.fields.chambre) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">Chambre :</span>
-                                    <span class="field-value">${client.chambre}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        if (config.fields.canal) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">Canal :</span>
-                                    <span class="field-value">${client.canal}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        if (config.fields.reference) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">Référence :</span>
-                                    <span class="field-value">${client.reference}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        if (config.fields.telephone) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">Téléphone :</span>
-                                    <span class="field-value">${client.telephone}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        if (config.fields.email) {
-                            cardContent += `
-                                <div class="card-field">
-                                    <span class="field-label">E-mail :</span>
-                                    <span class="field-value">${client.email}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        tempCard.innerHTML = `
-                            <div class="card-header">
-                                <div class="card-title">FICHE CLIENT</div>
-                                <div class="card-subtitle">${config.hotel.subtitle}</div>
-                            </div>
-                            <div class="card-content">
-                                ${cardContent}
-                            </div>
-                            <div class="card-footer">
-                                <div class="hotel-address">${config.hotel.address}</div>
-                            </div>
-                        `;
-                        
-                        document.body.appendChild(tempCard);
-                        
-                        // Convertir la carte en image
-                        const canvas = await html2canvas(tempCard, {
-                            scale: 2,
-                            useCORS: true,
-                            logging: false
-                        });
-                        
-                        // Ajouter l'image au PDF
-                        const imgData = canvas.toDataURL('image/jpeg', 0.9);
-                        doc.addImage(imgData, 'JPEG', positionX, positionY, cardWidth, cardHeight);
-                        
-                        // Nettoyer
-                        document.body.removeChild(tempCard);
-                        
-                        // Mettre à jour la position pour la prochaine carte
-                        positionY += cardHeight + marginY;
-                        
-                        // Si on dépasse la hauteur de la page, passer à la colonne suivante
-                        if (positionY + cardHeight > pageHeight - marginY) {
-                            positionY = marginY;
-                            positionX += cardWidth + marginX;
-                            
-                            // Si on dépasse la largeur de la page, passer à la page suivante
-                            if (positionX + cardWidth > pageWidth - marginX) {
-                                addNewPage();
-                            }
-                        }
-                    }
-                    
-                    // Sauvegarder le PDF
-                    doc.save('fiches_clients_vendome.pdf');
-                    
-                } catch (error) {
-                    console.error('Erreur lors de la génération du PDF:', error);
-                    alert('Erreur lors de la génération du PDF.');
-                } finally {
-                    showLoading(false);
-                }
+
+            return {
+                processFile
             };
-            
-            generatePDFWithCards();
-        }
-        
-        function printCards() {
-            if (clientData.length === 0) {
-                alert('Aucune donnée à imprimer.');
-                return;
+        })();
+
+        // =============================================
+        // MODULE GÉNÉRATION PDF
+        // =============================================
+        const PDFModule = (function() {
+            function generatePDF(cardElements, config) {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                
+                const cardWidth = config.cardWidth;
+                const cardHeight = config.cardHeight;
+                const margin = 5;
+                const spacing = 5;
+                
+                if (cardWidth * 2 + margin * 2 + spacing > pageWidth || 
+                    cardHeight * 2 + margin * 2 + spacing > pageHeight) {
+                    throw new Error('Les dimensions des cartes sont trop grandes pour une page A4.');
+                }
+                
+                const positions = [
+                    { x: margin, y: margin },
+                    { x: margin + cardWidth + spacing, y: margin },
+                    { x: margin, y: margin + cardHeight + spacing },
+                    { x: margin + cardWidth + spacing, y: margin + cardHeight + spacing }
+                ];
+                
+                const promises = Array.from(cardElements).map((card, index) => {
+                    return new Promise((resolve) => {
+                        const originalWidth = card.style.width;
+                        const originalHeight = card.style.height;
+                        card.style.width = cardWidth + 'mm';
+                        card.style.height = cardHeight + 'mm';
+                        
+                        html2canvas(card, {
+                            scale: 3,
+                            useCORS: true,
+                            logging: false,
+                            width: cardWidth * 3.78,
+                            height: cardHeight * 3.78
+                        }).then(canvas => {
+                            const imgData = canvas.toDataURL('image/png');
+                            
+                            if (index > 0 && index % 4 === 0) {
+                                pdf.addPage();
+                            }
+                            
+                            const positionIndex = index % 4;
+                            const position = positions[positionIndex];
+                            pdf.addImage(imgData, 'PNG', position.x, position.y, cardWidth, cardHeight);
+                            
+                            card.style.width = originalWidth;
+                            card.style.height = originalHeight;
+                            
+                            resolve();
+                        });
+                    });
+                });
+                
+                return Promise.all(promises).then(() => pdf);
             }
-            
-            // Préparer la section d'impression
-            printSection.innerHTML = '';
-            
-            // Créer un conteneur pour l'impression
-            const printContainer = document.createElement('div');
-            printContainer.className = 'print-container';
-            printContainer.style.display = 'grid';
-            printContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
-            printContainer.style.gap = '10mm';
-            printContainer.style.padding = '15mm';
-            
-            // Ajouter les cartes à imprimer
-            clientData.forEach(client => {
-                const printCard = document.createElement('div');
-                printCard.className = 'card';
-                printCard.style.width = `${config.cardWidth}mm`;
-                printCard.style.height = `${config.cardHeight}mm`;
-                printCard.style.padding = `${config.cardPadding}px`;
-                printCard.style.pageBreakInside = 'avoid';
+
+            return {
+                generatePDF
+            };
+        })();
+
+        // =============================================
+        // MODULE PRINCIPAL
+        // =============================================
+        const App = (function() {
+            let clientData = [];
+            let currentConfig = ConfigModule.load();
+
+            // Références aux éléments DOM
+            const elements = {
+                excelFileInput: document.getElementById('excel-file'),
+                processBtn: document.getElementById('process-btn'),
+                resetBtn: document.getElementById('reset-btn'),
+                previewSection: document.getElementById('preview-section'),
+                previewBody: document.getElementById('preview-body'),
+                noDataMessage: document.getElementById('no-data-message'),
+                cardsContainer: document.getElementById('cards-container'),
+                cardsPreview: document.getElementById('cards-preview'),
+                generatePdfBtn: document.getElementById('generate-pdf'),
+                printBtn: document.getElementById('print-btn'),
+                printSection: document.getElementById('print-section'),
+                configBtn: document.getElementById('config-btn'),
+                configModal: document.getElementById('config-modal'),
+                closeModal: document.getElementById('close-modal'),
+                cancelConfig: document.getElementById('cancel-config'),
+                saveConfig: document.getElementById('save-config'),
+                displayHotelName: document.getElementById('display-hotel-name'),
+                hotelNameInput: document.getElementById('hotel-name'),
+                hotelAddressInput: document.getElementById('hotel-address'),
+                hotelSubtitleInput: document.getElementById('hotel-subtitle'),
+                cardWidthInput: document.getElementById('card-width'),
+                cardHeightInput: document.getElementById('card-height'),
+                cardPaddingInput: document.getElementById('card-padding'),
+                fontSizeSelect: document.getElementById('font-size'),
+                configTabs: document.querySelectorAll('.config-tab'),
+                tabContents: document.querySelectorAll('.tab-content')
+            };
+
+            function init() {
+                bindEvents();
+                updateHotelDisplay();
+            }
+
+            function bindEvents() {
+                // Événements principaux
+                elements.excelFileInput.addEventListener('change', handleFileSelect);
+                elements.processBtn.addEventListener('click', processData);
+                elements.resetBtn.addEventListener('click', resetApp);
+                elements.generatePdfBtn.addEventListener('click', generatePDF);
+                elements.printBtn.addEventListener('click', printCards);
+                elements.configBtn.addEventListener('click', openConfig);
                 
-                // Construire le contenu de la carte
-                let cardContent = '';
+                // Événements de configuration
+                elements.closeModal.addEventListener('click', closeConfig);
+                elements.cancelConfig.addEventListener('click', closeConfig);
+                elements.saveConfig.addEventListener('click', saveConfiguration);
                 
-                if (config.fields.nom) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Nom :</span>
-                            <span class="field-value">${client.nom}</span>
+                // Gestion des onglets
+                elements.configTabs.forEach(tab => {
+                    tab.addEventListener('click', handleTabClick);
+                });
+
+                // Fermeture du modal en cliquant à l'extérieur
+                elements.configModal.addEventListener('click', function(e) {
+                    if (e.target === elements.configModal) {
+                        closeConfig();
+                    }
+                });
+            }
+
+            function handleTabClick(e) {
+                const tab = e.target;
+                const tabId = tab.getAttribute('data-tab');
+                
+                elements.configTabs.forEach(t => t.classList.remove('active'));
+                elements.tabContents.forEach(content => content.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+            }
+
+            function handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    elements.processBtn.disabled = false;
+                }
+            }
+
+            function processData() {
+                const file = elements.excelFileInput.files[0];
+                if (!file) return;
+                
+                ExcelModule.processFile(
+                    file,
+                    (data) => {
+                        clientData = data;
+                        displayDataPreview();
+                        generateCards();
+                    },
+                    (error) => {
+                        console.error('Erreur:', error);
+                        alert('Erreur lors du traitement du fichier: ' + error.message);
+                    }
+                );
+            }
+
+            function displayDataPreview() {
+                elements.previewSection.classList.remove('hidden');
+                elements.previewBody.innerHTML = '';
+                
+                const previewData = clientData.slice(0, 10);
+                
+                previewData.forEach(client => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${client.nom}</td>
+                        <td>${client.prenom}</td>
+                        <td>${client.nationalite}</td>
+                        <td>${client.dateArrivee}</td>
+                        <td>${client.dateDepart}</td>
+                        <td>${client.telephone}</td>
+                        <td>${client.reference}</td>
+                    `;
+                    elements.previewBody.appendChild(row);
+                });
+                
+                if (clientData.length > 10) {
+                    const infoRow = document.createElement('tr');
+                    infoRow.innerHTML = `<td colspan="7" style="text-align: center; font-style: italic;">... et ${clientData.length - 10} autres clients</td>`;
+                    elements.previewBody.appendChild(infoRow);
+                }
+            }
+
+            function generateCards() {
+                elements.noDataMessage.classList.add('hidden');
+                elements.cardsContainer.classList.remove('hidden');
+                elements.cardsPreview.innerHTML = '';
+                
+                applyCardConfiguration();
+                
+                clientData.forEach(client => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    let cardContent = '';
+                    const fields = currentConfig.fields;
+                    
+                    if (fields.nom) cardContent += createField('Nom', client.nom);
+                    if (fields.prenom) cardContent += createField('Prénom', client.prenom);
+                    if (fields.nationalite) cardContent += createField('Nationalité', client.nationalite);
+                    if (fields.arrivee) cardContent += createField('Arrivée', client.dateArrivee);
+                    if (fields.depart) cardContent += createField('Départ', client.dateDepart);
+                    if (fields.chambre) cardContent += createField('Type de chambre', client.chambre);
+                    if (fields.canal) cardContent += createField('Canal de réservation', client.canal);
+                    if (fields.reference) cardContent += createField('Réf. de réservation', client.reference);
+                    if (fields.telephone) cardContent += createField('Téléphone', client.telephone);
+                    if (fields.email) cardContent += createField('E-mail', client.email);
+                    
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <div class="card-title">FICHE CLIENT</div>
+                            <div class="card-subtitle">${currentConfig.hotel.subtitle}</div>
+                        </div>
+                        <div class="card-content">${cardContent}</div>
+                        <div class="card-footer">
+                            <div class="hotel-address">${currentConfig.hotel.address}</div>
                         </div>
                     `;
-                }
-                
-                if (config.fields.prenom) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Prénom :</span>
-                            <span class="field-value">${client.prenom}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.nationalite) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Nationalité :</span>
-                            <span class="field-value">${client.nationalite}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.arrivee) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Arrivée :</span>
-                            <span class="field-value">${client.dateArrivee}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.depart) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Départ :</span>
-                            <span class="field-value">${client.dateDepart}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.chambre) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Chambre :</span>
-                            <span class="field-value">${client.chambre}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.canal) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Canal :</span>
-                            <span class="field-value">${client.canal}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.reference) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Référence :</span>
-                            <span class="field-value">${client.reference}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.telephone) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">Téléphone :</span>
-                            <span class="field-value">${client.telephone}</span>
-                        </div>
-                    `;
-                }
-                
-                if (config.fields.email) {
-                    cardContent += `
-                        <div class="card-field">
-                            <span class="field-label">E-mail :</span>
-                            <span class="field-value">${client.email}</span>
-                        </div>
-                    `;
-                }
-                
-                printCard.innerHTML = `
-                    <div class="card-header">
-                        <div class="card-title">FICHE CLIENT</div>
-                        <div class="card-subtitle">${config.hotel.subtitle}</div>
-                    </div>
-                    <div class="card-content">
-                        ${cardContent}
-                    </div>
-                    <div class="card-footer">
-                        <div class="hotel-address">${config.hotel.address}</div>
+                    
+                    elements.cardsPreview.appendChild(card);
+                });
+            }
+
+            function createField(label, value) {
+                return `
+                    <div class="card-field">
+                        <span class="field-label">${label} :</span>
+                        <span class="field-value">${value}</span>
                     </div>
                 `;
+            }
+
+            function applyCardConfiguration() {
+                const cards = document.querySelectorAll('.card');
+                cards.forEach(card => {
+                    card.style.height = currentConfig.cardHeight + 'px';
+                    card.style.padding = currentConfig.cardPadding + 'px';
+                    
+                    if (currentConfig.fontSize === 'small') {
+                        card.style.fontSize = '0.8rem';
+                    } else if (currentConfig.fontSize === 'large') {
+                        card.style.fontSize = '1rem';
+                    } else {
+                        card.style.fontSize = '0.9rem';
+                    }
+                });
+            }
+
+            function generatePDF() {
+                const cardElements = document.querySelectorAll('.card');
+                if (cardElements.length === 0) {
+                    alert('Aucune fiche à générer.');
+                    return;
+                }
                 
-                printContainer.appendChild(printCard);
-            });
-            
-            printSection.appendChild(printContainer);
-            printSection.classList.remove('hidden');
-            
-            // Lancer l'impression
-            window.print();
-            
-            // Masquer la section d'impression après impression
-            setTimeout(() => {
-                printSection.classList.add('hidden');
-            }, 500);
-        }
-        
-        function openConfig() {
-            // Remplir les champs de configuration avec les valeurs actuelles
-            hotelNameInput.value = config.hotel.name;
-            hotelAddressInput.value = config.hotel.address;
-            hotelSubtitleInput.value = config.hotel.subtitle;
-            cardWidthInput.value = config.cardWidth;
-            cardHeightInput.value = config.cardHeight;
-            cardPaddingInput.value = config.cardPadding;
-            fontSizeSelect.value = config.fontSize;
-            
-            // Remplir les cases à cocher des champs
-            document.getElementById('field-nom').checked = config.fields.nom;
-            document.getElementById('field-prenom').checked = config.fields.prenom;
-            document.getElementById('field-nationalite').checked = config.fields.nationalite;
-            document.getElementById('field-arrivee').checked = config.fields.arrivee;
-            document.getElementById('field-depart').checked = config.fields.depart;
-            document.getElementById('field-chambre').checked = config.fields.chambre;
-            document.getElementById('field-canal').checked = config.fields.canal;
-            document.getElementById('field-reference').checked = config.fields.reference;
-            document.getElementById('field-telephone').checked = config.fields.telephone;
-            document.getElementById('field-email').checked = config.fields.email;
-            
-            // Afficher le modal
-            configModal.classList.remove('hidden');
-        }
-        
-        function closeConfig() {
-            configModal.classList.add('hidden');
-        }
-        
-        function saveConfiguration() {
-            // Sauvegarder les nouvelles valeurs de configuration
-            config.hotel.name = hotelNameInput.value;
-            config.hotel.address = hotelAddressInput.value;
-            config.hotel.subtitle = hotelSubtitleInput.value;
-            config.cardWidth = parseInt(cardWidthInput.value);
-            config.cardHeight = parseInt(cardHeightInput.value);
-            config.cardPadding = parseInt(cardPaddingInput.value);
-            config.fontSize = fontSizeSelect.value;
-            
-            // Sauvegarder les champs activés
-            config.fields.nom = document.getElementById('field-nom').checked;
-            config.fields.prenom = document.getElementById('field-prenom').checked;
-            config.fields.nationalite = document.getElementById('field-nationalite').checked;
-            config.fields.arrivee = document.getElementById('field-arrivee').checked;
-            config.fields.depart = document.getElementById('field-depart').checked;
-            config.fields.chambre = document.getElementById('field-chambre').checked;
-            config.fields.canal = document.getElementById('field-canal').checked;
-            config.fields.reference = document.getElementById('field-reference').checked;
-            config.fields.telephone = document.getElementById('field-telephone').checked;
-            config.fields.email = document.getElementById('field-email').checked;
-            
-            // Mettre à jour l'affichage
-            displayHotelName.textContent = config.hotel.name;
-            
-            // Regénérer les cartes si des données existent
-            if (clientData.length > 0) {
-                generateCards();
+                PDFModule.generatePDF(cardElements, currentConfig)
+                    .then(pdf => {
+                        pdf.save('fiches_clients_vendome_opera.pdf');
+                    })
+                    .catch(error => {
+                        alert(error.message);
+                    });
             }
-            
-            // Sauvegarder dans le stockage local
-            localStorage.setItem('vendomeCardConfig', JSON.stringify(config));
-            
-            // Fermer le modal
-            closeConfig();
-        }
-        
-        function loadConfiguration() {
-            const savedConfig = localStorage.getItem('vendomeCardConfig');
-            if (savedConfig) {
-                config = JSON.parse(savedConfig);
-                displayHotelName.textContent = config.hotel.name;
+
+            function printCards() {
+                elements.printSection.innerHTML = '';
+                
+                const printContainer = document.createElement('div');
+                printContainer.style.display = 'grid';
+                printContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                printContainer.style.gap = '10mm';
+                printContainer.style.padding = '10mm';
+                printContainer.style.width = '210mm';
+                printContainer.style.height = '297mm';
+                
+                const cardElements = document.querySelectorAll('.card');
+                cardElements.forEach(card => {
+                    const cardClone = card.cloneNode(true);
+                    cardClone.style.width = currentConfig.cardWidth + 'mm';
+                    cardClone.style.height = currentConfig.cardHeight + 'mm';
+                    cardClone.style.margin = '0';
+                    cardClone.style.boxShadow = 'none';
+                    cardClone.style.border = '1px solid #000';
+                    printContainer.appendChild(cardClone);
+                });
+                
+                elements.printSection.appendChild(printContainer);
+                window.print();
             }
-        }
-        
-        function resetApp() {
-            // Réinitialiser les données
-            clientData = [];
-            
-            // Réinitialiser l'interface
-            excelFileInput.value = '';
-            processBtn.disabled = true;
-            previewSection.classList.add('hidden');
-            noDataMessage.classList.remove('hidden');
-            cardsContainer.classList.add('hidden');
-            cardsPreview.innerHTML = '';
-            previewBody.innerHTML = '';
-        }
-        
-        function showLoading(show) {
-            if (show) {
-                loadingOverlay.classList.remove('hidden');
-                document.body.classList.add('loading');
-            } else {
-                loadingOverlay.classList.add('hidden');
-                document.body.classList.remove('loading');
+
+            function openConfig() {
+                // Remplir le modal avec la configuration actuelle
+                elements.hotelNameInput.value = currentConfig.hotel.name;
+                elements.hotelAddressInput.value = currentConfig.hotel.address;
+                elements.hotelSubtitleInput.value = currentConfig.hotel.subtitle;
+                elements.cardWidthInput.value = currentConfig.cardWidth;
+                elements.cardHeightInput.value = currentConfig.cardHeight;
+                elements.cardPaddingInput.value = currentConfig.cardPadding;
+                elements.fontSizeSelect.value = currentConfig.fontSize;
+                
+                // Remplir les cases à cocher
+                for (const field in currentConfig.fields) {
+                    const checkbox = document.getElementById(`field-${field}`);
+                    if (checkbox) {
+                        checkbox.checked = currentConfig.fields[field];
+                    }
+                }
+                
+                elements.configModal.classList.remove('hidden');
             }
-        }
+
+            function closeConfig() {
+                elements.configModal.classList.add('hidden');
+            }
+
+            function saveConfiguration() {
+                const newConfig = {
+                    hotel: {
+                        name: elements.hotelNameInput.value || "Hôtel Vendome Opéra ****",
+                        address: elements.hotelAddressInput.value || "11bis rue de l'arcade, 75008 Paris",
+                        subtitle: elements.hotelSubtitleInput.value || "Hôtel Vendome Opéra"
+                    },
+                    cardWidth: parseInt(elements.cardWidthInput.value) || 105,
+                    cardHeight: parseInt(elements.cardHeightInput.value) || 148,
+                    cardPadding: parseInt(elements.cardPaddingInput.value) || 15,
+                    fontSize: elements.fontSizeSelect.value,
+                    fields: {}
+                };
+                
+                for (const field in currentConfig.fields) {
+                    const checkbox = document.getElementById(`field-${field}`);
+                    if (checkbox) {
+                        newConfig.fields[field] = checkbox.checked;
+                    }
+                }
+                
+                currentConfig = ConfigModule.save(newConfig);
+                
+                if (clientData.length > 0) {
+                    generateCards();
+                }
+                
+                updateHotelDisplay();
+                closeConfig();
+            }
+
+            function updateHotelDisplay() {
+                elements.displayHotelName.textContent = currentConfig.hotel.name;
+            }
+
+            function resetApp() {
+                elements.excelFileInput.value = '';
+                elements.processBtn.disabled = true;
+                elements.previewSection.classList.add('hidden');
+                elements.noDataMessage.classList.remove('hidden');
+                elements.cardsContainer.classList.add('hidden');
+                clientData = [];
+            }
+
+            return {
+                init
+            };
+        })();
+
+        // Initialiser l'application
+        document.addEventListener('DOMContentLoaded', function() {
+            App.init();
+        });
     </script>
 </body>
 </html>
