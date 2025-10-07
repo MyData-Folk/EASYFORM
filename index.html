@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Fiches Clients - Vendome Opera</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #8b7355;
+            --light-color: #f9f7f4;
+            --border-color: #d4c9b9;
+            --accent-color: #c0a880;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--primary-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .hotel-name {
+            color: var(--secondary-color);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .description {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .config-btn {
+            position: absolute;
+            right: 0;
+            top: 0;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .output-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        
+        .file-input-container {
+            margin-bottom: 20px;
+        }
+        
+        .file-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .file-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--light-color);
+        }
+        
+        .preview-container {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            background-color: var(--light-color);
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        
+        .preview-table th, .preview-table td {
+            border: 1px solid var(--border-color);
+            padding: 6px;
+            text-align: left;
+        }
+        
+        .preview-table th {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .preview-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .button:hover {
+            background-color: #6d5c47;
+        }
+        
+        .button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .button-secondary {
+            background-color: var(--primary-color);
+        }
+        
+        .button-secondary:hover {
+            background-color: #1a252f;
+        }
+        
+        .cards-preview {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            height: 210px; /* Hauteur par défaut A6 */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: linear-gradient(to bottom, #ffffff, #f9f7f4);
+        }
+        
+        .card-header {
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--accent-color);
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .card-subtitle {
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            margin-top: 3px;
+        }
+        
+        .card-content {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .card-field {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .field-label {
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--secondary-color);
+            margin-bottom: 2px;
+        }
+        
+        .field-value {
+            font-size: 0.85rem;
+            padding: 3px 0;
+            min-height: 18px;
+            border-bottom: 1px dotted var(--border-color);
+        }
+        
+        .card-footer {
+            font-size: 0.7rem;
+            color: var(--secondary-color);
+            text-align: center;
+            margin-top: 8px;
+            padding-top: 5px;
+            border-top: 1px dashed var(--border-color);
+        }
+        
+        .hotel-address {
+            font-style: italic;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .instructions {
+            background-color: #f5f2ec;
+            border-left: 4px solid var(--secondary-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        /* Modal de configuration */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .modal-title {
+            color: var(--secondary-color);
+            font-size: 1.4rem;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--primary-color);
+        }
+        
+        .config-section {
+            margin-bottom: 25px;
+        }
+        
+        .config-section h3 {
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+        }
+        
+        .config-group {
+            margin-bottom: 15px;
+        }
+        
+        .config-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .config-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        
+        .config-checkbox {
+            margin-right: 8px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-label {
+            font-weight: normal;
+        }
+        
+        .config-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-section, .print-section * {
+                visibility: visible;
+            }
+            .print-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            
+            @page {
+                size: A4;
+                margin: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .cards-preview {
+                grid-template-columns: 1fr;
+            }
+            
+            .card-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Générateur de Fiches Clients</h1>
+            <div class="hotel-name">Hôtel Vendome Opéra ****</div>
+            <p class="description">Créez des fiches de renseignements préremplies à partir de votre fichier Excel Booking</p>
+            <button class="config-btn" id="config-btn">Configuration</button>
+        </header>
+        
+        <div class="instructions">
+            <h3>Instructions d'utilisation</h3>
+            <ul>
+                <li>Téléchargez votre fichier Excel d'export Booking (BookingExport.xlsx)</li>
+                <li>L'application extraira automatiquement les informations des clients</li>
+                <li>Vérifiez l'aperçu des données importées</li>
+                <li>Générez et visualisez les fiches clients au format A6</li>
+                <li>Imprimez les fiches au format PDF (4 fiches par page A4)</li>
+                <li>Utilisez le bouton Configuration pour ajuster la taille des cartes et les champs affichés</li>
+            </ul>
+        </div>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <h2 class="section-title">Importation des données</h2>
+                
+                <div class="file-input-container">
+                    <label class="file-label" for="excel-file">Sélectionnez votre fichier Excel BookingExport :</label>
+                    <input type="file" id="excel-file" class="file-input" accept=".xlsx, .xls">
+                </div>
+                
+                <button id="process-btn" class="button" disabled>Traiter les données</button>
+                <button id="reset-btn" class="button button-secondary">Réinitialiser</button>
+                
+                <div id="preview-section" class="hidden">
+                    <h2 class="section-title">Aperçu des données</h2>
+                    <div class="preview-container">
+                        <table class="preview-table" id="data-preview">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Prénom</th>
+                                    <th>Nationalité</th>
+                                    <th>Arrivée</th>
+                                    <th>Départ</th>
+                                    <th>Téléphone</th>
+                                    <th>Référence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="preview-body">
+                                <!-- Les données seront insérées ici -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <h2 class="section-title">Aperçu des fiches</h2>
+                
+                <div id="no-data-message">
+                    <p>Aucune donnée importée. Veuillez d'abord importer un fichier Excel.</p>
+                </div>
+                
+                <div id="cards-container" class="hidden">
+                    <div class="cards-preview" id="cards-preview">
+                        <!-- Les fiches seront générées ici -->
+                    </div>
+                    
+                    <button id="generate-pdf" class="button">Générer PDF</button>
+                    <button id="print-btn" class="button button-secondary">Imprimer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section pour l'impression -->
+    <div id="print-section" class="print-section hidden"></div>
+
+    <!-- Modal de configuration -->
+    <div id="config-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Configuration des fiches clients</h2>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            
+            <div class="config-section">
+                <h3>Dimensions des cartes</h3>
+                <div class="config-group">
+                    <label class="config-label" for="card-width">Largeur des cartes (mm) :</label>
+                    <input type="number" id="card-width" class="config-input" value="105" min="80" max="120">
+                </div>
+                <div class="config-group">
+                    <label class="config-label" for="card-height">Hauteur des cartes (mm) :</label>
+                    <input type="number" id="card-height" class="config-input" value="148" min="100" max="180">
+                </div>
+                <div class="config-group">
+                    <label class="config-label" for="card-padding">Marge intérieure (px) :</label>
+                    <input type="number" id="card-padding" class="config-input" value="15" min="5" max="30">
+                </div>
+                <div class="config-group">
+                    <label class="config-label" for="font-size">Taille de police :</label>
+                    <select id="font-size" class="config-input">
+                        <option value="small">Petite</option>
+                        <option value="medium" selected>Moyenne</option>
+                        <option value="large">Grande</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>Champs à afficher</h3>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-nom" class="config-checkbox" checked>
+                    <label class="checkbox-label" for="field-nom">Nom</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-prenom" class="config-checkbox" checked>
+                    <label class="checkbox-label" for="field-prenom">Prénom</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-nationalite" class="config-checkbox" checked>
+                    <label class="checkbox-label" for="field-nationalite">Nationalité</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-arrivee" class="config-checkbox" checked>
+                    <label class="checkbox-label" for="field-arrivee">Date d'arrivée</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-depart" class="config-checkbox" checked>
+                    <label class="checkbox-label" for="field-depart">Date de départ</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-chambre" class="config-checkbox" checked>
+                    <label class="checkbox-label" for="field-chambre">Type de chambre</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-canal" class="config-checkbox" checked>
+                    <label class="checkbox-label" for="field-canal">Canal de réservation</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-reference" class="config-checkbox" checked>
+                    <label class="checkbox-label" for="field-reference">Référence de réservation</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-telephone" class="config-checkbox" checked>
+                    <label class="checkbox-label" for="field-telephone">Téléphone</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="field-email" class="config-checkbox">
+                    <label class="checkbox-label" for="field-email">E-mail</label>
+                </div>
+            </div>
+            
+            <div class="config-buttons">
+                <button id="cancel-config" class="button button-secondary">Annuler</button>
+                <button id="save-config" class="button">Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bibliothèques externes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        // Variables globales
+        let clientData = [];
+        let config = {
+            cardWidth: 105,
+            cardHeight: 148,
+            cardPadding: 15,
+            fontSize: 'medium',
+            fields: {
+                nom: true,
+                prenom: true,
+                nationalite: true,
+                arrivee: true,
+                depart: true,
+                chambre: true,
+                canal: true,
+                reference: true,
+                telephone: true,
+                email: false
+            }
+        };
+        
+        // Références aux éléments DOM
+        const excelFileInput = document.getElementById('excel-file');
+        const processBtn = document.getElementById('process-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const previewSection = document.getElementById('preview-section');
+        const previewBody = document.getElementById('preview-body');
+        const noDataMessage = document.getElementById('no-data-message');
+        const cardsContainer = document.getElementById('cards-container');
+        const cardsPreview = document.getElementById('cards-preview');
+        const generatePdfBtn = document.getElementById('generate-pdf');
+        const printBtn = document.getElementById('print-btn');
+        const printSection = document.getElementById('print-section');
+        const configBtn = document.getElementById('config-btn');
+        const configModal = document.getElementById('config-modal');
+        const closeModal = document.getElementById('close-modal');
+        const cancelConfig = document.getElementById('cancel-config');
+        const saveConfig = document.getElementById('save-config');
+        
+        // Éléments de configuration
+        const cardWidthInput = document.getElementById('card-width');
+        const cardHeightInput = document.getElementById('card-height');
+        const cardPaddingInput = document.getElementById('card-padding');
+        const fontSizeSelect = document.getElementById('font-size');
+        
+        // Événements
+        excelFileInput.addEventListener('change', handleFileSelect);
+        processBtn.addEventListener('click', processData);
+        resetBtn.addEventListener('click', resetApp);
+        generatePdfBtn.addEventListener('click', generatePDF);
+        printBtn.addEventListener('click', printCards);
+        configBtn.addEventListener('click', openConfig);
+        closeModal.addEventListener('click', closeConfig);
+        cancelConfig.addEventListener('click', closeConfig);
+        saveConfig.addEventListener('click', saveConfiguration);
+        
+        // Charger la configuration sauvegardée
+        loadConfiguration();
+        
+        // Fonctions
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processBtn.disabled = false;
+            }
+        }
+        
+        function processData() {
+            const file = excelFileInput.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Prendre la première feuille
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Convertir en JSON
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // Traiter les données (supposer que la première ligne contient les en-têtes)
+                    const headers = jsonData[0];
+                    const dataRows = jsonData.slice(1);
+                    
+                    // Mapper les données aux champs souhaités selon votre fichier Excel
+                    clientData = dataRows.map(row => {
+                        // Trouver les indices des colonnes pertinentes selon votre fichier Excel
+                        const nomIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('nom'));
+                        const prenomIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('prénom'));
+                        const nationaliteIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('pays'));
+                        const dateArriveeIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('date d\'arrivée'));
+                        const dateDepartIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('date de départ'));
+                        const telephoneIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('téléphone'));
+                        const referenceIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('référence'));
+                        const chambreIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('type de chambre'));
+                        const canalIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('partenaire de distribution'));
+                        const emailIndex = headers.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('e-mail'));
+                        
+                        return {
+                            nom: nomIndex >= 0 && row[nomIndex] ? row[nomIndex].toString().toUpperCase() : '',
+                            prenom: prenomIndex >= 0 && row[prenomIndex] ? capitalizeFirstLetter(row[prenomIndex].toString()) : '',
+                            nationalite: nationaliteIndex >= 0 && row[nationaliteIndex] ? row[nationaliteIndex].toString() : '',
+                            dateArrivee: dateArriveeIndex >= 0 && row[dateArriveeIndex] ? formatDate(row[dateArriveeIndex]) : '',
+                            dateDepart: dateDepartIndex >= 0 && row[dateDepartIndex] ? formatDate(row[dateDepartIndex]) : '',
+                            telephone: telephoneIndex >= 0 && row[telephoneIndex] ? formatPhoneNumber(row[telephoneIndex].toString()) : '',
+                            reference: referenceIndex >= 0 && row[referenceIndex] ? row[referenceIndex].toString() : '',
+                            chambre: chambreIndex >= 0 && row[chambreIndex] ? row[chambreIndex].toString() : '',
+                            canal: canalIndex >= 0 && row[canalIndex] ? row[canalIndex].toString() : '',
+                            email: emailIndex >= 0 && row[emailIndex] ? row[emailIndex].toString() : ''
+                        };
+                    }).filter(client => client.nom && client.prenom); // Filtrer les clients sans nom/prénom
+                    
+                    // Afficher l'aperçu des données
+                    displayDataPreview();
+                    
+                    // Générer les fiches
+                    generateCards();
+                    
+                } catch (error) {
+                    console.error('Erreur lors du traitement du fichier:', error);
+                    alert('Erreur lors du traitement du fichier. Vérifiez le format du fichier.');
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('Erreur lors de la lecture du fichier.');
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+        }
+        
+        function formatPhoneNumber(phone) {
+            if (!phone) return '';
+            // Nettoyer le numéro de téléphone
+            return phone.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
+        }
+        
+        function formatDate(dateValue) {
+            // Gérer différents formats de date
+            if (!dateValue) return '';
+            
+            if (typeof dateValue === 'string') {
+                // Si c'est une chaîne de caractères, essayer de l'analyser
+                const date = new Date(dateValue);
+                if (!isNaN(date.getTime())) {
+                    return date.toLocaleDateString('fr-FR');
+                }
+                return dateValue;
+            }
+            
+            if (dateValue instanceof Date) {
+                return dateValue.toLocaleDateString('fr-FR');
+            }
+            
+            // Si c'est un numéro Excel (nombre de jours depuis 1900)
+            if (typeof dateValue === 'number') {
+                const date = new Date((dateValue - 25569) * 86400 * 1000);
+                return date.toLocaleDateString('fr-FR');
+            }
+            
+            return dateValue.toString();
+        }
+        
+        function displayDataPreview() {
+            // Afficher la section d'aperçu
+            previewSection.classList.remove('hidden');
+            
+            // Vider le tableau d'aperçu
+            previewBody.innerHTML = '';
+            
+            // Ajouter les données (limitées aux 10 premières lignes pour l'aperçu)
+            const previewData = clientData.slice(0, 10);
+            
+            previewData.forEach(client => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${client.nom}</td>
+                    <td>${client.prenom}</td>
+                    <td>${client.nationalite}</td>
+                    <td>${client.dateArrivee}</td>
+                    <td>${client.dateDepart}</td>
+                    <td>${client.telephone}</td>
+                    <td>${client.reference}</td>
+                `;
+                
+                previewBody.appendChild(row);
+            });
+            
+            // Afficher un message si plus de données
+            if (clientData.length > 10) {
+                const infoRow = document.createElement('tr');
+                infoRow.innerHTML = `<td colspan="7" style="text-align: center; font-style: italic;">... et ${clientData.length - 10} autres clients</td>`;
+                previewBody.appendChild(infoRow);
+            }
+        }
+        
+        function generateCards() {
+            // Cacher le message d'absence de données
+            noDataMessage.classList.add('hidden');
+            
+            // Afficher le conteneur de fiches
+            cardsContainer.classList.remove('hidden');
+            
+            // Vider les fiches existantes
+            cardsPreview.innerHTML = '';
+            
+            // Appliquer la configuration aux cartes
+            applyCardConfiguration();
+            
+            // Générer les fiches pour chaque client
+            clientData.forEach((client, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                // Construire le contenu de la carte en fonction des champs activés
+                let cardContent = '';
+                
+                if (config.fields.nom) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">Nom :</span>
+                            <span class="field-value">${client.nom}</span>
+                        </div>
+                    `;
+                }
+                
+                if (config.fields.prenom) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">Prénom :</span>
+                            <span class="field-value">${client.prenom}</span>
+                        </div>
+                    `;
+                }
+                
+                if (config.fields.nationalite) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">Nationalité :</span>
+                            <span class="field-value">${client.nationalite}</span>
+                        </div>
+                    `;
+                }
+                
+                if (config.fields.arrivee) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">Arrivée :</span>
+                            <span class="field-value">${client.dateArrivee}</span>
+                        </div>
+                    `;
+                }
+                
+                if (config.fields.depart) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">Départ :</span>
+                            <span class="field-value">${client.dateDepart}</span>
+                        </div>
+                    `;
+                }
+                
+                if (config.fields.chambre) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">Type de chambre :</span>
+                            <span class="field-value">${client.chambre}</span>
+                        </div>
+                    `;
+                }
+                
+                if (config.fields.canal) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">Canal de réservation :</span>
+                            <span class="field-value">${client.canal}</span>
+                        </div>
+                    `;
+                }
+                
+                if (config.fields.reference) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">Réf. de réservation :</span>
+                            <span class="field-value">${client.reference}</span>
+                        </div>
+                    `;
+                }
+                
+                if (config.fields.telephone) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">Téléphone :</span>
+                            <span class="field-value">${client.telephone}</span>
+                        </div>
+                    `;
+                }
+                
+                if (config.fields.email) {
+                    cardContent += `
+                        <div class="card-field">
+                            <span class="field-label">E-mail :</span>
+                            <span class="field-value">${client.email}</span>
+                        </div>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-title">FICHE CLIENT</div>
+                        <div class="card-subtitle">Hôtel Vendome Opéra</div>
+                    </div>
+                    <div class="card-content">
+                        ${cardContent}
+                    </div>
+                    <div class="card-footer">
+                        <div class="hotel-address">11bis rue de l'arcade, 75008 Paris</div>
+                    </div>
+                `;
+                
+                cardsPreview.appendChild(card);
+            });
+        }
+        
+        function applyCardConfiguration() {
+            // Appliquer la configuration de taille aux cartes
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.style.height = config.cardHeight + 'px';
+                card.style.padding = config.cardPadding + 'px';
+                
+                // Appliquer la taille de police
+                if (config.fontSize === 'small') {
+                    card.style.fontSize = '0.8rem';
+                } else if (config.fontSize === 'large') {
+                    card.style.fontSize = '1rem';
+                } else {
+                    card.style.fontSize = '0.9rem';
+                }
+            });
+            
+            // Ajuster la grille d'aperçu
+            cardsPreview.style.gap = '15px';
+        }
+        
+        function generatePDF() {
+            // Utiliser html2canvas et jsPDF pour générer le PDF
+            const { jsPDF } = window.jspdf;
+            
+            // Créer un PDF en orientation portrait pour A4
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            // Dimensions des cartes selon la configuration
+            const cardWidth = config.cardWidth;
+            const cardHeight = config.cardHeight;
+            
+            // Marges et espacement calculés pour tenir sur A4
+            const margin = 5;
+            const spacing = 5;
+            
+            // Vérifier que les cartes tiennent sur la page
+            if (cardWidth * 2 + margin * 2 + spacing > pageWidth || 
+                cardHeight * 2 + margin * 2 + spacing > pageHeight) {
+                alert('Les dimensions des cartes sont trop grandes pour une page A4. Veuillez ajuster la configuration.');
+                return;
+            }
+            
+            // Calculer les positions des 4 fiches
+            const positions = [
+                { x: margin, y: margin }, // Haut gauche
+                { x: margin + cardWidth + spacing, y: margin }, // Haut droite
+                { x: margin, y: margin + cardHeight + spacing }, // Bas gauche
+                { x: margin + cardWidth + spacing, y: margin + cardHeight + spacing } // Bas droite
+            ];
+            
+            // Fonction pour capturer une carte et l'ajouter au PDF
+            const addCardToPDF = (cardElement, position, index) => {
+                return new Promise((resolve) => {
+                    // Ajuster le style de la carte pour l'impression
+                    const originalWidth = cardElement.style.width;
+                    const originalHeight = cardElement.style.height;
+                    cardElement.style.width = cardWidth + 'mm';
+                    cardElement.style.height = cardHeight + 'mm';
+                    
+                    html2canvas(cardElement, {
+                        scale: 3, // Meilleure qualité pour l'impression
+                        useCORS: true,
+                        logging: false,
+                        width: cardWidth * 3.78, // Conversion mm en px
+                        height: cardHeight * 3.78
+                    }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        
+                        // Ajouter une nouvelle page si nécessaire (sauf pour la première carte)
+                        if (index > 0 && index % 4 === 0) {
+                            pdf.addPage();
+                        }
+                        
+                        // Ajouter l'image au PDF à la position calculée
+                        pdf.addImage(imgData, 'PNG', position.x, position.y, cardWidth, cardHeight);
+                        
+                        // Restaurer le style original
+                        cardElement.style.width = originalWidth;
+                        cardElement.style.height = originalHeight;
+                        
+                        resolve();
+                    });
+                });
+            };
+            
+            // Capturer toutes les cartes et les ajouter au PDF
+            const cardElements = document.querySelectorAll('.card');
+            const promises = [];
+            
+            cardElements.forEach((card, index) => {
+                const positionIndex = index % 4;
+                const position = positions[positionIndex];
+                
+                promises.push(addCardToPDF(card, position, index));
+            });
+            
+            // Une fois toutes les cartes ajoutées, sauvegarder le PDF
+            Promise.all(promises).then(() => {
+                pdf.save('fiches_clients_vendome_opera.pdf');
+            });
+        }
+        
+        function printCards() {
+            // Préparer la section d'impression
+            printSection.innerHTML = '';
+            
+            // Créer un conteneur pour l'impression avec le style approprié
+            const printContainer = document.createElement('div');
+            printContainer.style.display = 'grid';
+            printContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            printContainer.style.gap = '10mm';
+            printContainer.style.padding = '10mm';
+            printContainer.style.width = '210mm'; // Largeur A4
+            printContainer.style.height = '297mm'; // Hauteur A4
+            
+            // Cloner toutes les cartes pour l'impression
+            const cardElements = document.querySelectorAll('.card');
+            cardElements.forEach(card => {
+                const cardClone = card.cloneNode(true);
+                cardClone.style.width = config.cardWidth + 'mm';
+                cardClone.style.height = config.cardHeight + 'mm';
+                cardClone.style.margin = '0';
+                cardClone.style.boxShadow = 'none';
+                cardClone.style.border = '1px solid #000';
+                printContainer.appendChild(cardClone);
+            });
+            
+            printSection.appendChild(printContainer);
+            
+            // Lancer l'impression
+            window.print();
+        }
+        
+        function openConfig() {
+            // Remplir le modal avec la configuration actuelle
+            cardWidthInput.value = config.cardWidth;
+            cardHeightInput.value = config.cardHeight;
+            cardPaddingInput.value = config.cardPadding;
+            fontSizeSelect.value = config.fontSize;
+            
+            // Remplir les cases à cocher
+            for (const field in config.fields) {
+                const checkbox = document.getElementById(`field-${field}`);
+                if (checkbox) {
+                    checkbox.checked = config.fields[field];
+                }
+            }
+            
+            // Afficher le modal
+            configModal.classList.remove('hidden');
+        }
+        
+        function closeConfig() {
+            configModal.classList.add('hidden');
+        }
+        
+        function saveConfiguration() {
+            // Sauvegarder la nouvelle configuration
+            config.cardWidth = parseInt(cardWidthInput.value) || 105;
+            config.cardHeight = parseInt(cardHeightInput.value) || 148;
+            config.cardPadding = parseInt(cardPaddingInput.value) || 15;
+            config.fontSize = fontSizeSelect.value;
+            
+            // Sauvegarder les champs
+            for (const field in config.fields) {
+                const checkbox = document.getElementById(`field-${field}`);
+                if (checkbox) {
+                    config.fields[field] = checkbox.checked;
+                }
+            }
+            
+            // Sauvegarder dans le localStorage
+            localStorage.setItem('ficheClientConfig', JSON.stringify(config));
+            
+            // Régénérer les cartes si des données existent
+            if (clientData.length > 0) {
+                generateCards();
+            }
+            
+            // Fermer le modal
+            closeConfig();
+        }
+        
+        function loadConfiguration() {
+            const savedConfig = localStorage.getItem('ficheClientConfig');
+            if (savedConfig) {
+                config = JSON.parse(savedConfig);
+            }
+        }
+        
+        function resetApp() {
+            // Réinitialiser l'application
+            excelFileInput.value = '';
+            processBtn.disabled = true;
+            previewSection.classList.add('hidden');
+            noDataMessage.classList.remove('hidden');
+            cardsContainer.classList.add('hidden');
+            clientData = [];
+        }
+    </script>
+</body>
+</html>
